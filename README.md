@@ -15,7 +15,7 @@ A small, native macOS video cutter. Mark the parts you want to keep, then export
 
 Release downloads will be published on the [Releases page](https://github.com/orrmy/Trimsmith/releases). Open the DMG and drag Trimsmith into Applications. A self-contained release includes FFmpeg and ffprobe; Homebrew is not required for users.
 
-Requires **macOS 14 or later**. Universal release packaging targets Apple Silicon and Intel. The first public binary release is still being prepared; development candidates are not notarized public releases.
+Requires **macOS 14 or later**. Universal releases support Apple Silicon and Intel. Public release downloads are Developer ID-signed and notarized; development candidates are labeled separately.
 
 ## Quick start
 

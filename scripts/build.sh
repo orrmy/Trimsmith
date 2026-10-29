@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="${APP_OUTPUT:-$ROOT/build/Trimsmith.app}"
 ARCHS="${ARCHS:-$(uname -m)}"
 VERSION="${VERSION:-0.1.0}"
-BUILD_NUMBER="${BUILD_NUMBER:-24}"
+BUILD_NUMBER="${BUILD_NUMBER:-25}"
 IDENTITY="${SIGN_IDENTITY:--}"
 if [[ ! "$ROOT/Resources/AppIcon.icns" -nt "$ROOT/Branding/IconConcepts/trimsmith-craftsman-v1.png" ]]; then
   "$ROOT/scripts/build-icon.sh"

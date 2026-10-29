@@ -62,7 +62,7 @@ Then build a public release candidate:
 ```sh
 SIGN_IDENTITY="Developer ID Application: YOUR NAME (TEAMID)" \
 NOTARY_PROFILE="Trimsmith" \
-python3 scripts/build-release.py --arch universal --version 0.1.0 --build-number 24
+python3 scripts/build-release.py --arch universal --version 0.1.0 --build-number 25
 ```
 
 The pipeline signs nested tools before the app, uses hardened runtime and secure timestamps, checks architecture slices/load paths/deployment targets, notarizes and staples the app, builds/signs/notarizes/staples the DMG, and verifies the disk image. Any failed step stops publication. Artifact directories are not overwritten automatically. Public builds require a clean committed checkout; `BuildInfo.json` records the source revision and build number inside the app.

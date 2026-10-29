@@ -67,7 +67,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arch", choices=["arm64", "x86_64", "universal"], default="universal")
     parser.add_argument("--version", default="0.1.0")
-    parser.add_argument("--build-number", default="24")
+    parser.add_argument("--build-number", default="25")
     parser.add_argument("--development", action="store_true", help="Explicitly allow an unnotarized local candidate")
     args = parser.parse_args()
     if not args.version or any(c not in "0123456789." for c in args.version):
