@@ -145,11 +145,19 @@ struct ImportEngine {
         if plan.encodesVideo {
             // send_field preserves interlaced motion as one progressive frame
             // per field. Even dimensions are required by the 4:2:0 encoder.
-            let filter = (plan.deinterlace ? "bwdif=mode=send_field:parity=auto:deint=all," : "") + "pad=ceil(iw/2)*2:ceil(ih/2)*2"
+            let topFirst = ["tt", "bt"].contains(plan.fieldOrder)
+            // The encoder also reads field flags from each decoded frame, not
+            // just output metadata. Normalize those flags when preserving fields.
+            let fieldFlags = plan.isInterlaced && !plan.deinterlace ? "setfield=mode=\(topFirst ? "tff" : "bff")," : ""
+            let filter = (plan.deinterlace ? "bwdif=mode=send_field:parity=auto:deint=all," : fieldFlags) + "pad=ceil(iw/2)*2:ceil(ih/2)*2"
             args += ["-c:v", "libx264", "-crf", "18", "-preset", "fast", "-pix_fmt", "yuv420p", "-vf", filter, "-fps_mode", "vfr"]
             if plan.isInterlaced && !plan.deinterlace {
-                let topFirst = ["tt", "bt"].contains(plan.fieldOrder)
-                args += ["-flags", "+ilme+ildct", "-top", topFirst ? "1" : "0"]
+                // field_order is the encoder option; FFmpeg 9 no longer accepts
+                // the old -top flag as an output encoding option.
+                // x264 must know field dominance when the encoder opens;
+                // changing frame flags afterward can leave its initial TFF default.
+                args += ["-flags", "+ilme+ildct", "-field_order", topFirst ? "tt" : "bb",
+                         "-x264-params", topFirst ? "tff=1" : "bff=1"]
             }
         } else {
             args += ["-c:v", "copy"]

@@ -163,7 +163,7 @@ struct ImportTests {
 
         let interlaced = root.appendingPathComponent("interlaced.ts")
         _ = try await Command().run(tools.ffmpeg, ["-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=50:duration=2",
-            "-vf", "tinterlace=interleave_top", "-c:v", "libx264", "-flags", "+ilme+ildct", "-top", "1", interlaced.path])
+            "-vf", "tinterlace=interleave_top", "-c:v", "libx264", "-flags", "+ilme+ildct", "-field_order", "tt", interlaced.path])
         let interlacedPlan = try await ImportEngine.inspect(interlaced, tools: tools)
         precondition(interlacedPlan.isInterlaced && interlacedPlan.needsConfirmation)
         precondition(!interlacedPlan.deinterlace && !interlacedPlan.encodesVideo)
@@ -182,13 +182,26 @@ struct ImportTests {
         let progressiveHashes = try await hashes(progressiveCopy.url)
         precondition(progressiveHashes.count == 2 * interlacedOriginalHashes.count, "One progressive frame per field must retain field-rate motion")
         let mpeg2 = root.appendingPathComponent("interlaced-mpeg2.ts")
-        _ = try await Command().run(tools.ffmpeg, ["-v", "error", "-y", "-i", interlaced.path, "-c:v", "mpeg2video", "-flags", "+ilme+ildct", "-top", "1", mpeg2.path])
+        _ = try await Command().run(tools.ffmpeg, ["-v", "error", "-y", "-i", interlaced.path, "-c:v", "mpeg2video", "-flags", "+ilme+ildct", "-field_order", "tt", mpeg2.path])
         let mpeg2Plan = try await ImportEngine.inspect(mpeg2, tools: tools)
         precondition(mpeg2Plan.isInterlaced && mpeg2Plan.convertVideo && !mpeg2Plan.deinterlace)
         let mpeg2Copy = try await ImportEngine.prepare(mpeg2Plan, tools: tools) { _ in }
         let mpeg2Metadata = try await metadata(mpeg2Copy.url)
         let mpeg2Stream = (mpeg2Metadata["streams"] as! [[String: Any]])[0]
         precondition(mpeg2Stream["field_order"] as? String == "tt", "Required codec conversion must preserve interlacing when deinterlacing is off")
+
+        // Field-order compatibility must also retain bottom-field-first recordings.
+        let bottom = root.appendingPathComponent("interlaced-bottom-mpeg2.ts")
+        _ = try await Command().run(tools.ffmpeg, ["-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=50:duration=2",
+            "-vf", "tinterlace=interleave_bottom", "-c:v", "mpeg2video", "-flags", "+ilme+ildct", "-field_order", "bb", bottom.path])
+        let bottomPlan = try await ImportEngine.inspect(bottom, tools: tools)
+        precondition(bottomPlan.fieldOrder == "bb" && bottomPlan.convertVideo && !bottomPlan.deinterlace)
+        let bottomCopy = try await ImportEngine.prepare(bottomPlan, tools: tools) { _ in }
+        let bottomMetadata = try await metadata(bottomCopy.url)
+        let bottomOrder = (bottomMetadata["streams"] as! [[String: Any]])[0]["field_order"] as? String ?? ""
+        // H.264 can code the top field first while displaying the bottom first (tb).
+        precondition(["bb", "tb"].contains(bottomOrder),
+                     "Required codec conversion must preserve bottom-field-first interlacing")
 
         // Partial copies must be cleaned when cancellation kills an active importer.
         let scratch = root.appendingPathComponent("import-stall-\(UUID().uuidString)", isDirectory: true)
