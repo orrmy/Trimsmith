@@ -1,0 +1,43 @@
+name: Build development DMG
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install build tools
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake nasm pkg-config
+      - name: Prepare DMG builder
+        run: |
+          python3 -m venv build/release-venv
+          build/release-venv/bin/pip install -r packaging/requirements-release.txt
+      - name: Build self-contained development candidate
+        run: python3 scripts/build-release.py --development --arch universal
+      - name: Test bundled Apple Silicon tools
+        env:
+          TEST_TOOL_DIR: ${{ github.workspace }}/build/tools/arm64/bin
+        run: ./scripts/test.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: Trimsmith-development-candidate
+          path: dist/0.1.0-universal-dev/*
+          if-no-files-found: error
+          retention-days: 14
+
+  intel-tools:
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install build tools
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake nasm pkg-config
+      - name: Build exact Intel release tools
+        run: python3 scripts/build-tools.py --arch x86_64
+      - name: Run Intel integration tests with release tools
+        env:
+          TEST_TOOL_DIR: ${{ github.workspace }}/build/tools/x86_64/bin
+        run: ./scripts/test.sh

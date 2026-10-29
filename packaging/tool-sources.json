@@ -1,0 +1,20 @@
+{
+  "ffmpeg": {
+    "version": "8.1.2",
+    "archive": "ffmpeg-8.1.2.tar.xz",
+    "url": "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
+    "sha256": "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c"
+  },
+  "x264": {
+    "version": "31e19f92f00c7003fa115047ce50978bc98c3a0d",
+    "archive": "x264-31e19f92.tar.gz",
+    "url": "https://codeload.github.com/mirror/x264/tar.gz/31e19f92f00c7003fa115047ce50978bc98c3a0d",
+    "sha256": "d053c9d86988d6bc78237ca5205865c5ddf99c98ef4cd9927eec8f6d388f6dd9"
+  },
+  "x265": {
+    "version": "4.2",
+    "archive": "x265-4.2.tar.gz",
+    "url": "https://downloads.videolan.org/pub/videolan/x265/x265_4.2.tar.gz",
+    "sha256": "40b1ea0453e0309f0eba934e0ddf533f8f6295966679e8894e8f1c1c8d5e1210"
+  }
+}

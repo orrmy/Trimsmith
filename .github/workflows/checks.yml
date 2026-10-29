@@ -1,0 +1,23 @@
+name: Build and test
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install test tools
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+      - name: Build native app
+        run: ./scripts/build.sh
+      - name: Run generated-media integration tests
+        run: ./scripts/test.sh
