@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import Foundation
 import Darwin
 
@@ -159,6 +160,11 @@ struct EditorTests {
             editor.player.pause()
         }
         editor.seek(2)
+        // currentTime can report the target before native decode preroll finishes.
+        // Await seek completion so this test does not race stepping against a pending seek.
+        let settled = await editor.player.seek(to: CMTime(seconds: 2, preferredTimescale: 600000),
+                                               toleranceBefore: .zero, toleranceAfter: .zero)
+        precondition(settled)
         try await waitUntil("settled frame-step origin") { abs(editor.player.currentTime().seconds - 2) < 0.001 }
         editor.step(1)
         try await waitUntil("native next frame") { editor.position > 2.001 }

@@ -589,4 +589,3 @@ final class EditorModel: ObservableObject {
     /// Selects the last successfully saved file in Finder.
     func revealExport() { if let lastExport { NSWorkspace.shared.activateFileViewerSelecting([lastExport]) } }
 }
-
