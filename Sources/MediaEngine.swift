@@ -688,8 +688,10 @@ struct MediaEngine {
                 try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
+        // Load the graph from a file without growing argv for long cut lists.
+        // The general -/ option syntax replaces filter_complex_script, removed in FFmpeg 9.
         var args = ["-hide_banner", "-v", "warning", "-nostdin", "-y", "-progress", report.path,
-                    "-t", number(clips.last!.end), "-i", source.path, "-filter_complex_script", script.path,
+                    "-t", number(clips.last!.end), "-i", source.path, "-/filter_complex", script.path,
                     "-map", "[vout]"]
         for audio in audioTracks.indices {
             args += ["-map", "[aout\(audio)]", "-map_metadata:s:a:\(audio)", "0:s:a:\(audio)"]

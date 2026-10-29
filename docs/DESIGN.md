@@ -12,7 +12,7 @@ To rebuild, from this directory:
 ./scripts/build.sh
 ```
 
-Uses Xcode's Swift compiler, no downloaded Swift packages. The script builds for the current Mac's architecture and applies an ad hoc code signature. This is a development build, not a notarized distribution. FFmpeg is currently discovered locally rather than bundled; the tool locator also accepts future bundled executables in `Contents/Resources/bin`.
+Uses Xcode's Swift compiler, no downloaded Swift packages. The script builds for the current Mac's architecture and applies an ad hoc code signature. This is a development build, not a notarized distribution. Development builds discover local FFmpeg; self-contained releases bundle pinned tools in `Contents/Resources/bin`. See [release instructions](RELEASING.md).
 
 ## App icon
 

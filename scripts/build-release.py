@@ -67,7 +67,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arch", choices=["arm64", "x86_64", "universal"], default="universal")
     parser.add_argument("--version", default="0.1.0")
-    parser.add_argument("--build-number", default="22")
+    parser.add_argument("--build-number", default="23")
     parser.add_argument("--development", action="store_true", help="Explicitly allow an unnotarized local candidate")
     args = parser.parse_args()
     if not args.version or any(c not in "0123456789." for c in args.version):
@@ -80,12 +80,21 @@ def main():
     venv = ROOT / "build/release-venv/bin/python3"
     if not venv.exists():
         parser.error("Create build/release-venv and install packaging/requirements-release.txt first; see docs/RELEASING.md")
+    revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip())
+    if not args.development and dirty:
+        parser.error("Commit source changes before building a public release")
+    label = args.arch + ("-dev" if args.development else "")
+    dist = ROOT / "dist" / f"{args.version}-{label}"
+    if dist.exists():
+        parser.error(f"Artifact directory already exists: {dist}; move it aside before rebuilding")
     run([sys.executable, ROOT / "scripts/build-tools.py", "--arch", args.arch])
     # Documents may be managed by a file provider that adds FinderInfo after
     # signing. Assemble outside it so the sealed app remains unchanged.
     work = Path(tempfile.mkdtemp(prefix="Trimsmith-release-"))
-    label = args.arch + ("-dev" if args.development else "")
     source = source_materials(work, arches, args.version, label)
+    (work / "resources/BuildInfo.json").write_text(json.dumps({"revision": revision, "dirty": dirty,
+        "version": args.version, "build": args.build_number, "architectures": arches}, indent=2) + "\n")
     app = work / "Trimsmith.app"
     env = dict(os.environ, APP_OUTPUT=str(app), ARCHS=" ".join(arches), TOOL_ARCHS=" ".join(arches),
                VERSION=args.version, BUILD_NUMBER=args.build_number, SIGN_IDENTITY=identity,
@@ -114,7 +123,6 @@ def main():
         run(["xcrun", "stapler", "validate", dmg])
     run(["hdiutil", "verify", dmg])
     # Do not silently overwrite a previous release candidate or signed artifact.
-    dist = ROOT / "dist" / f"{args.version}-{label}"
     dist.mkdir(parents=True, exist_ok=False)
     for file in (dmg, source):
         shutil.copy2(file, dist / file.name)
