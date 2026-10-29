@@ -21,6 +21,7 @@ struct EditorTests {
     /// imports.
     @MainActor
     static func main() async throws {
+        let nativeFrameCheck = ProcessInfo.processInfo.environment["TRIMSMITH_HEADLESS_TESTS"] != "1"
         let tools = try Toolchain.testing()
         let root = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let source = root.appendingPathComponent("fixture.mp4")
@@ -159,20 +160,27 @@ struct EditorTests {
             precondition(editor.player.rate == editor.playbackRate, "Repeated native pause/resume must retain speed")
             editor.player.pause()
         }
-        editor.seek(2)
-        // currentTime can report the target before native decode preroll finishes.
-        // Await seek completion so this test does not race stepping against a pending seek.
-        let settled = await editor.player.seek(to: CMTime(seconds: 2, preferredTimescale: 600000),
-                                               toleranceBefore: .zero, toleranceAfter: .zero)
-        precondition(settled)
-        try await waitUntil("settled frame-step origin") { abs(editor.player.currentTime().seconds - 2) < 0.001 }
-        editor.step(1)
-        try await waitUntil("native next frame") { editor.position > 2.001 }
-        let stepped = editor.position
-        editor.undo()
-        precondition(abs(editor.position - 2) < 0.001)
-        editor.redo()
-        precondition(abs(editor.position - stepped) < 0.001, "Frame stepping must support redo")
+        // Hosted CI has no interactive video presentation session. Keep this
+        // platform playback assertion mandatory in the default local test run,
+        // while CI still checks frame content/boundaries through real FFmpeg decodes.
+        if nativeFrameCheck {
+            editor.seek(2)
+            // currentTime can report the target before native decode preroll finishes.
+            // Await seek completion so this test does not race stepping against a pending seek.
+            let settled = await editor.player.seek(to: CMTime(seconds: 2, preferredTimescale: 600000),
+                                                   toleranceBefore: .zero, toleranceAfter: .zero)
+            precondition(settled)
+            try await waitUntil("settled frame-step origin") { abs(editor.player.currentTime().seconds - 2) < 0.001 }
+            editor.step(1)
+            try await waitUntil("native next frame") { editor.position > 2.001 }
+            let stepped = editor.position
+            editor.undo()
+            precondition(abs(editor.position - 2) < 0.001)
+            editor.redo()
+            precondition(abs(editor.position - stepped) < 0.001, "Frame stepping must support redo")
+        } else {
+            print("SKIP: native AVPlayer frame-step playback requires an interactive Mac session; run without --headless locally")
+        }
         editor.seek(3)
         editor.jumpKeyframe(1)
         precondition(editor.position == 4)
@@ -308,6 +316,6 @@ struct EditorTests {
         try await waitUntil("replacement after cancellation") { loading.ready || loading.error != nil }
         precondition(loading.error == nil && loading.originalSource == source && loading.keyframes.count == 4)
         await loading.shutdown()
-        print("PASS: playhead seek/drag/frame/keyframe undo-redo, selection without seeking or pausing, edit undo/redo and redo branching, playback speed including native restarts, automatic chronological selections, unused/adjacent/duplicate cuts, cut deletion undo/redo, four boundary previews and EOF, selection/mode preview refresh, local-copy isolation/cleanup, failed/declined-import preservation, conversion/deinterlacing approval, TS import, cold/warm document opening, playback gate, progress, active probe kill, prompt shutdown, cancel and replacement")
+        print("PASS: playhead seek/drag/" + (nativeFrameCheck ? "frame/" : "") + "keyframe undo-redo, selection without seeking or pausing, edit undo/redo and redo branching, playback speed including native restarts, automatic chronological selections, unused/adjacent/duplicate cuts, cut deletion undo/redo, four boundary previews and EOF, selection/mode preview refresh, local-copy isolation/cleanup, failed/declined-import preservation, conversion/deinterlacing approval, TS import, cold/warm document opening, playback gate, progress, active probe kill, prompt shutdown, cancel and replacement")
     }
 }

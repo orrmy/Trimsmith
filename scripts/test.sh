@@ -1,6 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Only the native AVPlayer frame-step assertion requires an interactive desktop.
+# Make its omission explicit on hosted runners; normal local runs remain strict.
+if [[ $# -eq 1 && "$1" == "--headless" ]]; then
+  export TRIMSMITH_HEADLESS_TESTS=1
+elif [[ $# -ne 0 ]]; then
+  echo "Usage: $0 [--headless]" >&2
+  exit 2
+fi
 ARCH="${TEST_ARCH:-$(uname -m)}"
 case "$ARCH" in arm64|x86_64) ;; *) echo "Unsupported test architecture: $ARCH" >&2; exit 1 ;; esac
 mkdir -p "$ROOT/build/module-cache"

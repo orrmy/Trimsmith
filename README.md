@@ -44,6 +44,8 @@ For self-contained universal builds, bundled tool sources, DMG creation, Develop
 ./scripts/test.sh
 ```
 
+Default local runs include native AVPlayer frame stepping. Hosted CI uses `--headless`, explicitly skipping that one interactive playback assertion while keeping decoded-frame export and preview checks.
+
 The tests generate local media and exercise import preservation/conversion, all audio tracks, lossless boundaries, frame-exact encoders, export warnings, safe saving, cancellation, editing history, playback, previews, and document events. See [implementation notes](docs/DESIGN.md) for behavior and limitations. To test bundled tools, set `TEST_TOOL_DIR` as described in the release instructions.
 
 ## Current limits

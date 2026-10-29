@@ -19,5 +19,5 @@ jobs:
         run: HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
       - name: Build native app
         run: ./scripts/build.sh
-      - name: Run generated-media integration tests
-        run: ./scripts/test.sh
+      - name: Run media and headless editor checks
+        run: ./scripts/test.sh --headless
